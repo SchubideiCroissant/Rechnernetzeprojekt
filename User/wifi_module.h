@@ -1,48 +1,29 @@
-#include "wifi_wrapper.h"
-#include "wifi_module.h"
+#ifndef WIFI_MODULE_H
+#define WIFI_MODULE_H
+
 #include "stm32l4xx_hal.h"
 
-static WiFiModule* wifiInstance = nullptr;
+class WiFiModule {
+public:
+    WiFiModule(SPI_HandleTypeDef *hspi, GPIO_TypeDef* CS_GPIO_Port, uint16_t CS_Pin);
 
-extern UART_HandleTypeDef huart1;
+    bool init();
+    bool connect(const char *ssid, const char *password);
+    bool openTCPSocket(const char *host, uint16_t port);
+    bool sendData(const uint8_t *data, size_t len);
+    int receiveData(uint8_t *buffer, size_t max_len);
+    bool fetchPrompt(uint32_t timeout);
+    int readData(uint8_t* buffer, size_t buffer_len, uint32_t timeout);
+    bool sendCommand(const char* cmd, uint32_t timeout);
 
-void WiFiWrapper_Init(SPI_HandleTypeDef *hspi, GPIO_TypeDef* GPIOx, uint16_t GPIO_Pin) {
-    static WiFiModule staticInstance(hspi, GPIOx, GPIO_Pin);
-    wifiInstance = &staticInstance;
-    wifiInstance->init();
-}
+private:
+    SPI_HandleTypeDef *m_hspi;
+    GPIO_TypeDef* m_CS_GPIO_Port;
+    uint16_t m_CS_Pin;
 
-bool WiFiWrapper_Connect(const char *ssid, const char *password) {
-    if (!wifiInstance) return false;
-    return wifiInstance->connect(ssid, password);
-}
+    void select();
+    void deselect();
 
-bool WiFiWrapper_OpenSocket(const char *host, uint16_t port) {
-    if (!wifiInstance) return false;
-    return wifiInstance->openTCPSocket(host, port);
-}
+};
 
-bool WiFiWrapper_Send(const uint8_t *data, size_t len) {
-    if (!wifiInstance) return false;
-    return wifiInstance->sendData(data, len);
-}
-
-int WiFiWrapper_Receive(uint8_t *buffer, size_t max_len) {
-    if (!wifiInstance) return -1;
-    return wifiInstance->receiveData(buffer, max_len);
-}
-
-bool WiFiWrapper_SendCommand(const char* cmd, uint32_t timeout) {
-    if (!wifiInstance) return false;
-    return wifiInstance->sendCommand(cmd, timeout);
-}
-
-int WiFiWrapper_ReadData(uint8_t* buffer, size_t buffer_len, uint32_t timeout) {
-    if (!wifiInstance) return -1;
-    return wifiInstance->readData(buffer, buffer_len, timeout);
-}
-
-bool WiFiWrapper_FetchPrompt(uint32_t timeout) {
-    if (!wifiInstance) return false;
-    return wifiInstance->fetchPrompt(timeout);
-}
+#endif // WIFI_MODULE_H

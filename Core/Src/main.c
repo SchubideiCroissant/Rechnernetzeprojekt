@@ -26,10 +26,15 @@
 #include "wifi_wrapper.h"
 #include <stdio.h>
 
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
+typedef struct {
+    uint8_t data[256];
+    uint16_t length;
+} WiFiMessage_t;
 
 /* USER CODE END PTD */
 
@@ -82,6 +87,7 @@ void HelloWorldTask(void *argument)
 }
 
 
+
 extern I2C_HandleTypeDef hi2c2;  // I2C2 Handler
 
 #define HTS221_I2C_ADDR    (0x5F << 1)  // 7bit Adresse + Shift
@@ -117,9 +123,8 @@ void Read_HTS221_WhoAmI(void)
 }
 
 
-
-
 osMutexId_t spiMutexHandle;
+osMessageQueueId_t wifiMessageQueueHandle;
 
 
 
@@ -127,7 +132,7 @@ osThreadId_t wifiTaskHandle;
 void StartWiFiTask(void *argument)
 {
     char msg[128] = {0};
-    const char *command = "F0\r";
+    const char *command = "P4=2000\r" ;
 
     // 1. Initialisierung
     strcpy(msg, "Starte Initialisierung...\r\n");
@@ -136,9 +141,10 @@ void StartWiFiTask(void *argument)
     if (osMutexAcquire(spiMutexHandle, HAL_MAX_DELAY) == osOK)
     {
         wifi_init();
+        osMutexRelease(spiMutexHandle);
 
     }
-    osMutexRelease(spiMutexHandle);
+
     // 2. Periodisches Senden alle 5 Sekunden
     for (;;)
     {
@@ -163,46 +169,80 @@ void WiFiReceiveTask(void *argument)
 
     for (;;)
     {
-        if (HAL_GPIO_ReadPin(GPIOE, GPIO_PIN_1) == 1) //CMD/DATA READY
+        if (HAL_GPIO_ReadPin(GPIOE, GPIO_PIN_1) == 1)
         {
-            // Nur lesen, wenn Mutex verfügbar
-            if (osMutexAcquire(spiMutexHandle, 0) == osOK)  // nicht blockierend
+            if (osMutexAcquire(spiMutexHandle, 0) == osOK)
             {
                 int received = wifi_read_data(response, sizeof(response), 1000);
                 osMutexRelease(spiMutexHandle);
 
                 if (received > 0)
                 {
-                    HAL_UART_Transmit(&huart1, response, received, HAL_MAX_DELAY);
+                    WiFiMessage_t message;
+                    memcpy(message.data, response, received);
+                    message.length = received;
+
+                    osMessageQueuePut(wifiMessageQueueHandle, &message, 0, 0);
                 }
             }
         }
 
-        osDelay(10); // CPU entlasten
+        osDelay(10);
     }
 }
 
 
+osThreadId_t wifiOutputTaskHandle;
+
+void WiFiOutputTask(void *argument)
+{
+	WiFiMessage_t receivedMessage;
+
+
+    for (;;)
+    {
+        if (osMessageQueueGet(wifiMessageQueueHandle, &receivedMessage, NULL, osWaitForever) == osOK)
+        {
+        	HAL_UART_Transmit(&huart1, receivedMessage.data, receivedMessage.length, HAL_MAX_DELAY);
+        }
+    }
+}
+
+
+const osThreadAttr_t wifiTask_attributes = {
+        .name = "Start Wifi with Commands",
+        .priority = (osPriority_t) osPriorityBelowNormal,
+        .stack_size = 512*8
+    };
 
 const osThreadAttr_t wifiReceiveTask_attributes = {
-        .name = "StartWiFiReceiveTask",
-        .priority = (osPriority_t) osPriorityNormal,
+        .name = "ReceiveTask",
+        .priority = (osPriority_t) osPriorityHigh,
         .stack_size = 1024*8
     };
 
-const osThreadAttr_t wifiTask_attributes = {
-        .name = "wifiTask",
-        .priority = (osPriority_t) osPriorityNormal,
-        .stack_size = 512*8
+const osThreadAttr_t wifiOutputTask_attributes = {
+        .name = "PrintTask",
+        .priority = (osPriority_t) osPriorityLow,
+        .stack_size = 1024*8
     };
 const osThreadAttr_t helloTask_attributes = {
     .name = "helloTask",
     .stack_size = 128 * 4,
     .priority = (osPriority_t) osPriorityNormal,
   };
-  const osMutexAttr_t spiMutex_attributes = {
+
+const osMutexAttr_t spiMutex_attributes = {
     .name = "spiMutex"
 };
+
+const osMessageQueueAttr_t wifiMessageQueue_attributes = {
+      .name = "wifiQueue"
+  };
+
+
+  // 10 Nachrichten, jede max. 256 Bytes
+
 
 
 /* USER CODE END PV */
@@ -290,6 +330,7 @@ int main(void)
   /* USER CODE END RTOS_TIMERS */
 
   /* USER CODE BEGIN RTOS_QUEUES */
+  wifiMessageQueueHandle = osMessageQueueNew(10, sizeof(WiFiMessage_t), NULL);
   /* add queues, ... */
   /* USER CODE END RTOS_QUEUES */
 
@@ -299,8 +340,9 @@ int main(void)
 
   /* USER CODE BEGIN RTOS_THREADS */
   helloTaskHandle = osThreadNew(HelloWorldTask, NULL, &helloTask_attributes);
-  //wifiTaskHandle = osThreadNew(StartWiFiTask, NULL, &wifiTask_attributes);
-  //wifiReceiveTaskHandle = osThreadNew(WiFiReceiveTask, NULL, &wifiReceiveTask_attributes);
+  wifiTaskHandle = osThreadNew(StartWiFiTask, NULL, &wifiTask_attributes);
+  wifiReceiveTaskHandle = osThreadNew(WiFiReceiveTask, NULL, &wifiReceiveTask_attributes);
+  wifiOutputTaskHandle = osThreadNew(WiFiOutputTask, NULL, &wifiOutputTask_attributes);
   /* add threads, ... */
   /* USER CODE END RTOS_THREADS */
 
@@ -524,11 +566,11 @@ static void MX_SPI1_Init(void)
   hspi1.Instance = SPI1;
   hspi1.Init.Mode = SPI_MODE_MASTER;
   hspi1.Init.Direction = SPI_DIRECTION_2LINES;
-  hspi1.Init.DataSize = SPI_DATASIZE_4BIT;
+  hspi1.Init.DataSize = SPI_DATASIZE_16BIT;
   hspi1.Init.CLKPolarity = SPI_POLARITY_LOW;
   hspi1.Init.CLKPhase = SPI_PHASE_1EDGE;
   hspi1.Init.NSS = SPI_NSS_SOFT;
-  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_2;
+  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_4;
   hspi1.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi1.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi1.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;

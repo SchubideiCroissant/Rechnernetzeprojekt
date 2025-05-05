@@ -1,20 +1,26 @@
-#ifndef WIFI_WRAPPER_H
-#define WIFI_WRAPPER_H
-
 #include "wifi_module.h"
+#include "stm32l4xx_hal.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
+    #include "wifi_wrapper.h"
 
-void WiFiWrapper_Init(SPI_HandleTypeDef *hspi, GPIO_TypeDef* GPIOx, uint16_t GPIO_Pin);
-bool WiFiWrapper_Connect(const char *ssid, const char *password);
-bool WiFiWrapper_OpenSocket(const char *host, uint16_t port);
-bool WiFiWrapper_Send(const uint8_t *data, size_t len);
-int WiFiWrapper_Receive(uint8_t *buffer, size_t max_len);
+    extern SPI_HandleTypeDef hspi3;
 
-#ifdef __cplusplus
+    static WiFiModule wifi(&hspi3, GPIOE, GPIO_PIN_0);
+
+    bool wifi_init(void) {
+        return wifi.init();
+    }
+
+    bool wifi_connect(const char* ssid, const char* password) {
+        return wifi.connect(ssid, password);
+    }
+
+    int wifi_read_data(uint8_t* buffer, size_t buffer_len, uint32_t timeout) {
+        return wifi.readData(buffer, buffer_len, timeout);
+    }
+
+    bool wifi_send_command(const char* cmd, uint32_t timeout) {
+        return wifi.sendCommand(cmd, timeout);
+    }
 }
-#endif
-
-#endif // WIFI_WRAPPER_H

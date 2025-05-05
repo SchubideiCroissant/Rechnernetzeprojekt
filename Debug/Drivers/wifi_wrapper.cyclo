@@ -1,0 +1,6 @@
+../Drivers/wifi_wrapper.cpp:11:10:bool wifi_init()	1
+../Drivers/wifi_wrapper.cpp:15:10:bool wifi_connect(const char*, const char*)	1
+../Drivers/wifi_wrapper.cpp:19:9:int wifi_read_data(uint8_t*, size_t, uint32_t)	1
+../Drivers/wifi_wrapper.cpp:23:10:bool wifi_send_command(const char*, uint32_t)	1
+../Drivers/wifi_wrapper.cpp:26:1:void __static_initialization_and_destruction_0()	1
+../Drivers/wifi_wrapper.cpp:26:1:cpp)	1

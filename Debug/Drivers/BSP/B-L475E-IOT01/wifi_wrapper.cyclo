@@ -1,6 +1,0 @@
-../Drivers/BSP/B-L475E-IOT01/wifi_wrapper.cpp:12:10:bool wifi_init()	1
-../Drivers/BSP/B-L475E-IOT01/wifi_wrapper.cpp:16:10:bool wifi_connect(const char*, const char*)	1
-../Drivers/BSP/B-L475E-IOT01/wifi_wrapper.cpp:19:9:int wifi_read_data(uint8_t*, size_t, uint32_t)	1
-../Drivers/BSP/B-L475E-IOT01/wifi_wrapper.cpp:22:10:bool wifi_send_command(const char*, uint32_t)	1
-../Drivers/BSP/B-L475E-IOT01/wifi_wrapper.cpp:24:5:void __static_initialization_and_destruction_0()	1
-../Drivers/BSP/B-L475E-IOT01/wifi_wrapper.cpp:24:5:cpp)	1

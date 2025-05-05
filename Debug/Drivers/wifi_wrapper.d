@@ -1,6 +1,5 @@
-Drivers/BSP/B-L475E-IOT01/wifi_module.o: \
- ../Drivers/BSP/B-L475E-IOT01/wifi_module.cpp \
- ../Drivers/BSP/B-L475E-IOT01/wifi_module.h \
+Drivers/wifi_wrapper.o: ../Drivers/wifi_wrapper.cpp \
+ ../Drivers/wifi_module.h \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal.h \
  ../Core/Inc/stm32l4xx_hal_conf.h \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_rcc.h \
@@ -37,8 +36,9 @@ Drivers/BSP/B-L475E-IOT01/wifi_module.o: \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_tim.h \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_tim_ex.h \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_uart.h \
- ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_uart_ex.h
-../Drivers/BSP/B-L475E-IOT01/wifi_module.h:
+ ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_uart_ex.h \
+ ../Drivers/wifi_wrapper.h
+../Drivers/wifi_module.h:
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal.h:
 ../Core/Inc/stm32l4xx_hal_conf.h:
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_rcc.h:
@@ -76,3 +76,4 @@ Drivers/BSP/B-L475E-IOT01/wifi_module.o: \
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_tim_ex.h:
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_uart.h:
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_uart_ex.h:
+../Drivers/wifi_wrapper.h:
